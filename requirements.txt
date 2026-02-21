@@ -1,0 +1,11 @@
+python-dotenv
+langchain-core
+langchain-community
+langchain-huggingface
+langchain-text-splitters
+langchain-groq
+langchain
+langgraph
+faiss-cpu
+bedrock-agentcore
+langgraph-checkpoint-aws
