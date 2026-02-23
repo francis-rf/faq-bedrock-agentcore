@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 
 import boto3
 
@@ -79,7 +80,6 @@ def _init_agent():
 
 @app.entrypoint
 def agent_invocation(payload, context):
-    import traceback
     try:
         agent = _init_agent()
 
@@ -111,8 +111,5 @@ def agent_invocation(payload, context):
         return {"error": str(e), "traceback": error_details}
 
 
-# Always call app.run() — no __main__ guard.
-# The Dockerfile CMD is "python main.py" which runs this directly.
-# Removing the guard ensures the HTTP server starts unconditionally,
-# so AgentCore's health check on /ping passes immediately at startup.
-app.run()
+if __name__ == "__main__":
+    app.run()
