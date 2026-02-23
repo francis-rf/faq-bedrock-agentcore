@@ -2,6 +2,7 @@ boto3
 langchain-core
 langchain-community
 langchain-huggingface
+sentence-transformers
 langchain-text-splitters
 langchain-groq
 langchain
