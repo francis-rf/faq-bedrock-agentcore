@@ -9,4 +9,5 @@ langchain
 langgraph
 faiss-cpu
 bedrock-agentcore
+uvicorn
 langgraph-checkpoint-aws
