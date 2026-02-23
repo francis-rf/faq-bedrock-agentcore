@@ -8,6 +8,11 @@ from src.utils.logger import get_logger
 
 _logger = get_logger(__name__)
 
+# AgentCoreMemorySaver creates its boto3 client using the AWS_DEFAULT_REGION env var.
+# AgentCore's managed runtime doesn't set this automatically, so we set it explicitly
+# here — before any lazy initialization runs — so boto3 can resolve the region.
+os.environ.setdefault("AWS_DEFAULT_REGION", AWS_REGION)
+
 
 def _load_secrets():
     """Fetch all secrets from Secrets Manager."""
