@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lauki FAQ Agent</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="layout">
+
+    <!-- ── Header ── -->
+    <header class="header">
+      <div class="header-left">
+        <span class="logo">&#129302;</span>
+        <span class="brand">Lauki FAQ Agent</span>
+      </div>
+      <button class="session-toggle" id="sessionToggle" title="Session settings">&#9881;</button>
+    </header>
+
+    <!-- ── Session Panel ── -->
+    <div class="session-panel" id="sessionPanel">
+      <label>
+        Actor ID
+        <input type="text" id="actorId" value="web-user" />
+      </label>
+      <label>
+        Thread ID
+        <input type="text" id="threadId" value="web-session-1" />
+      </label>
+      <button class="clear-btn" id="clearBtn">Clear chat</button>
+    </div>
+
+    <!-- ── Messages ── -->
+    <main class="messages" id="messages">
+      <div class="welcome">
+        <div class="welcome-icon">&#129302;</div>
+        <p>Hi! I'm the Lauki FAQ Agent. Ask me anything about Lauki Mobile's network, plans, or services.</p>
+      </div>
+    </main>
+
+    <!-- ── Input Row ── -->
+    <footer class="input-row">
+      <textarea
+        id="promptInput"
+        placeholder="Ask a question…"
+        rows="1"
+        autocomplete="off"
+      ></textarea>
+      <button class="send-btn" id="sendBtn" title="Send">
+        <svg id="sendIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+        </svg>
+        <span class="spinner hidden" id="spinner"></span>
+      </button>
+    </footer>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
