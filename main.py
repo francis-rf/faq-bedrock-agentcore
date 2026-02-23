@@ -1,20 +1,41 @@
-from dotenv import load_dotenv
+import json
+import os
 
-_ = load_dotenv()
+import boto3
+
+from src.utils.settings import SECRET_NAME, AWS_REGION
+from src.utils.logger import get_logger
+
+_logger = get_logger(__name__)
+
+
+def _load_secrets():
+    """Fetch all secrets from Secrets Manager."""
+    try:
+        client = boto3.client("secretsmanager", region_name=AWS_REGION)
+        response = client.get_secret_value(SecretId=SECRET_NAME)
+        secret = json.loads(response["SecretString"])
+        os.environ["GROQ_API_KEY"] = secret["GROQ_API_KEY"]
+        os.environ["MEMORY_ID"] = secret["MEMORY_ID"]
+        _logger.info("Secrets loaded from Secrets Manager")
+    except Exception as e:
+        _logger.error("Failed to load secrets: %s", e)
+        raise
+
+
+_load_secrets()
 
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from langgraph_checkpoint_aws import AgentCoreMemorySaver, AgentCoreMemoryStore
 
-from src.utils.settings import MEMORY_ID
-from src.utils.logger import get_logger
 from src.knowledge_base import FAQKnowledgeBase
 from src.tools import FAQTools
 from src.agent import FAQAgent
 from src.memory import MemoryMiddleware
 
-logger = get_logger(__name__)
-
 app = BedrockAgentCoreApp()
+
+MEMORY_ID = os.environ["MEMORY_ID"]
 
 # Initialize components
 knowledge_base = FAQKnowledgeBase()
@@ -28,13 +49,13 @@ agent = FAQAgent(
     middleware=[MemoryMiddleware()],
 )
 
-logger.info("Application initialized")
+_logger.info("Application initialized")
 
 
 @app.entrypoint
 def agent_invocation(payload, context):
-    logger.info("Received payload: %s", payload)
-    logger.info("Context: %s", context)
+    _logger.info("Received payload: %s", payload)
+    _logger.info("Context: %s", context)
 
     query = payload.get("prompt", "No prompt found in input")
     actor_id = payload.get("actor_id", "default-user")
@@ -48,7 +69,7 @@ def agent_invocation(payload, context):
     }
 
     answer = agent.invoke(query, config=config)
-    logger.info("Response generated for actor %s", actor_id)
+    _logger.info("Response generated for actor %s", actor_id)
 
     return {
         "result": answer,
