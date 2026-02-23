@@ -35,25 +35,47 @@ from src.memory import MemoryMiddleware
 
 app = BedrockAgentCoreApp()
 
-MEMORY_ID = os.environ["MEMORY_ID"]
+# Lazy initialization — agent is built on the first invocation request,
+# not at container startup. This ensures app.run() is reached quickly so
+# AgentCore's health check on /ping succeeds before initialization completes.
+_agent = None
+_init_error = None
 
-# Initialize components
-knowledge_base = FAQKnowledgeBase()
-tools = FAQTools(knowledge_base).get_tools()
-checkpointer = AgentCoreMemorySaver(memory_id=MEMORY_ID)
-memory_store = AgentCoreMemoryStore(memory_id=MEMORY_ID)
-agent = FAQAgent(
-    tools=tools,
-    checkpointer=checkpointer,
-    store=memory_store,
-    middleware=[MemoryMiddleware()],
-)
 
-_logger.info("Application initialized")
+def _init_agent():
+    """Initialize the agent on first call. Subsequent calls return the cached instance."""
+    global _agent, _init_error
+
+    if _agent is not None:
+        return _agent
+
+    if _init_error is not None:
+        raise _init_error
+
+    try:
+        MEMORY_ID = os.environ["MEMORY_ID"]
+        knowledge_base = FAQKnowledgeBase()
+        tools = FAQTools(knowledge_base).get_tools()
+        checkpointer = AgentCoreMemorySaver(memory_id=MEMORY_ID)
+        memory_store = AgentCoreMemoryStore(memory_id=MEMORY_ID)
+        _agent = FAQAgent(
+            tools=tools,
+            checkpointer=checkpointer,
+            store=memory_store,
+            middleware=[MemoryMiddleware()],
+        )
+        _logger.info("Agent initialized successfully")
+        return _agent
+    except Exception as e:
+        _logger.error("Failed to initialize agent: %s", e, exc_info=True)
+        _init_error = e
+        raise
 
 
 @app.entrypoint
 def agent_invocation(payload, context):
+    agent = _init_agent()
+
     _logger.info("Received payload: %s", payload)
     _logger.info("Context: %s", context)
 
@@ -78,5 +100,8 @@ def agent_invocation(payload, context):
     }
 
 
-if __name__ == "__main__":
-    app.run()
+# Always call app.run() — no __main__ guard.
+# The Dockerfile CMD is "python main.py" which runs this directly.
+# Removing the guard ensures the HTTP server starts unconditionally,
+# so AgentCore's health check on /ping passes immediately at startup.
+app.run()
