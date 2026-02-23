@@ -74,30 +74,36 @@ def _init_agent():
 
 @app.entrypoint
 def agent_invocation(payload, context):
-    agent = _init_agent()
+    import traceback
+    try:
+        agent = _init_agent()
 
-    _logger.info("Received payload: %s", payload)
-    _logger.info("Context: %s", context)
+        _logger.info("Received payload: %s", payload)
+        _logger.info("Context: %s", context)
 
-    query = payload.get("prompt", "No prompt found in input")
-    actor_id = payload.get("actor_id", "default-user")
-    thread_id = payload.get("thread_id", payload.get("session_id", "default-session"))
+        query = payload.get("prompt", "No prompt found in input")
+        actor_id = payload.get("actor_id", "default-user")
+        thread_id = payload.get("thread_id", payload.get("session_id", "default-session"))
 
-    config = {
-        "configurable": {
-            "thread_id": thread_id,
-            "actor_id": actor_id,
+        config = {
+            "configurable": {
+                "thread_id": thread_id,
+                "actor_id": actor_id,
+            }
         }
-    }
 
-    answer = agent.invoke(query, config=config)
-    _logger.info("Response generated for actor %s", actor_id)
+        answer = agent.invoke(query, config=config)
+        _logger.info("Response generated for actor %s", actor_id)
 
-    return {
-        "result": answer,
-        "actor_id": actor_id,
-        "thread_id": thread_id,
-    }
+        return {
+            "result": answer,
+            "actor_id": actor_id,
+            "thread_id": thread_id,
+        }
+    except Exception as e:
+        error_details = traceback.format_exc()
+        _logger.error("Invocation failed: %s", error_details)
+        return {"error": str(e), "traceback": error_details}
 
 
 # Always call app.run() — no __main__ guard.
