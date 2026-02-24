@@ -17,6 +17,7 @@ AWS credentials are picked up automatically via:
 
 import json
 import os
+import uvicorn
 
 import boto3
 from botocore.exceptions import ClientError
@@ -97,5 +98,4 @@ app.mount("/", StaticFiles(directory="frontend", html=True), name="static")
 # ── Local dev entry-point ─────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
