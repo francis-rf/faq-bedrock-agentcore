@@ -7,7 +7,7 @@ FastAPI proxy that:
     AgentCore DEFAULT endpoint using boto3 (SigV4 signing handled automatically)
 
 Environment variables required at runtime:
-  AGENT_RUNTIME_ID  — AgentCore runtime ID (e.g. abc123xyz)
+  AGENT_RUNTIME_ARN — AgentCore runtime ARN (full ARN)
   AWS_REGION        — AWS region (default: us-east-1)
 
 AWS credentials are picked up automatically via:
@@ -26,8 +26,8 @@ from pydantic import BaseModel
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-REGION           = os.environ.get("AWS_REGION", "us-east-1")
-AGENT_RUNTIME_ID = os.environ.get("AGENT_RUNTIME_ID", "")
+REGION            = os.environ.get("AWS_REGION", "us-east-1")
+AGENT_RUNTIME_ARN = os.environ.get("AGENT_RUNTIME_ARN", "")
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
@@ -47,7 +47,7 @@ class ChatRequest(BaseModel):
 @app.get("/health")
 def health():
     """Health check for App Runner / load balancers."""
-    return {"status": "ok", "agent_runtime_id": AGENT_RUNTIME_ID or "not-set"}
+    return {"status": "ok", "agent_runtime_arn": AGENT_RUNTIME_ARN or "not-set"}
 
 
 @app.post("/chat")
@@ -58,10 +58,10 @@ def chat(req: ChatRequest):
     boto3 handles AWS SigV4 request signing automatically using the
     credentials available in the environment (IAM role or env vars).
     """
-    if not AGENT_RUNTIME_ID:
+    if not AGENT_RUNTIME_ARN:
         raise HTTPException(
             status_code=503,
-            detail="AGENT_RUNTIME_ID environment variable is not set.",
+            detail="AGENT_RUNTIME_ARN environment variable is not set.",
         )
 
     client = boto3.client("bedrock-agentcore", region_name=REGION)
@@ -74,11 +74,10 @@ def chat(req: ChatRequest):
 
     try:
         response = client.invoke_agent_runtime(
-            agentRuntimeId=AGENT_RUNTIME_ID,
-            agentRuntimeEndpointName="DEFAULT",
+            agentRuntimeArn=AGENT_RUNTIME_ARN,
             payload=json.dumps(payload).encode(),
         )
-        body = response["body"].read()
+        body = response["response"].read()
         return json.loads(body)
 
     except ClientError as e:
