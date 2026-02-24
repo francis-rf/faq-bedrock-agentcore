@@ -57,6 +57,34 @@ final_project/
 
 ---
 
+## 🔌 API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/` | Serves the web chat UI |
+| `GET` | `/health` | Health check — returns status and runtime ARN |
+| `POST` | `/chat` | Send a message to the FAQ agent |
+
+**POST /chat — Request**
+```json
+{
+  "prompt": "What plans do you offer?",
+  "actor_id": "web-user",
+  "thread_id": "web-session-1"
+}
+```
+
+**POST /chat — Response**
+```json
+{
+  "result": "We offer three main plans: Basic, Standard, and Premium...",
+  "actor_id": "web-user",
+  "thread_id": "web-session-1"
+}
+```
+
+---
+
 ## 🚀 Local Development
 
 ### Web UI
@@ -86,6 +114,11 @@ python main.py
 ```
 
 ---
+
+## 📸 Screenshots
+
+![Application Interface](screenshots/image.png)
+_Multi Modal Chatbot Interface with image generation_
 
 ## ☁️ AWS Deployment
 
