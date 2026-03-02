@@ -13,6 +13,7 @@ AWS_REGION = "us-east-1"
 # S3
 S3_BUCKET = "faq-agent-data"
 S3_KEY = "qna.csv"
+S3_VECTORSTORE_PREFIX = "vectorstore"
 
 # Secrets Manager
-SECRET_NAME = "faq-agent/groq-api-key"
+SECRET_NAME = "faq-agent"
