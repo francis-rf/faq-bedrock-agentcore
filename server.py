@@ -27,8 +27,13 @@ from pydantic import BaseModel
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-REGION            = os.environ.get("AWS_REGION", "us-east-1")
-AGENT_RUNTIME_ARN = os.environ.get("AGENT_RUNTIME_ARN", "")
+REGION  = os.environ.get("AWS_REGION", "us-east-1")
+
+# Strip /runtime-endpoint/... suffix if the full endpoint ARN was provided.
+# The invoke_agent_runtime API only accepts the base runtime ARN; the qualifier
+# (DEFAULT) is applied automatically when omitted.
+_raw_arn          = os.environ.get("AGENT_RUNTIME_ARN", "")
+AGENT_RUNTIME_ARN = _raw_arn.split("/runtime-endpoint/")[0] if _raw_arn else ""
 
 # ── App ───────────────────────────────────────────────────────────────────────
 

@@ -30,3 +30,7 @@ data/
 # OS
 .DS_Store
 Thumbs.db
+nul
+
+# Local dev runner (contains hardcoded ARN for local testing)
+run_local.py

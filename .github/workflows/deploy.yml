@@ -1,0 +1,83 @@
+name: Deploy FAQ Agent
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION:   us-east-1
+  ECR_REGISTRY: 023254205975.dkr.ecr.us-east-1.amazonaws.com
+
+# ── Job 1: Web UI → App Runner ────────────────────────────────────────────────
+# Builds the AMD64 FastAPI proxy image and triggers an App Runner redeployment.
+
+jobs:
+  deploy-web:
+    name: Build & Deploy Web UI
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push web image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.web
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/faq-agent-web:latest
+            ${{ env.ECR_REGISTRY }}/faq-agent-web:${{ github.sha }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+
+      - name: Deploy to App Runner
+        run: |
+          aws apprunner start-deployment \
+            --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
+            --region      ${{ env.AWS_REGION }}
+
+# ── Job 2: Agent → ECR (ARM64) ────────────────────────────────────────────────
+# Builds the ARM64 AgentCore runtime image and pushes it to ECR.
+# AgentCore will pick up the new image on the next runtime restart or
+# when manually updated via the Bedrock console.
+
+  deploy-agent:
+    name: Build & Push Agent (ARM64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push agent image (ARM64)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/faq-agent:latest
+            ${{ env.ECR_REGISTRY }}/faq-agent:${{ github.sha }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
